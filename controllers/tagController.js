@@ -2,6 +2,7 @@
 
 const { validationResult } = require('express-validator');
 const Tag = require('../models/Tag');
+const Article = require('../models/Article'); // 添加这行代码
 
 // 获取标签列表
 exports.getTags = async (req, res, next) => {
@@ -68,16 +69,21 @@ exports.updateTag = async (req, res, next) => {
 // 删除标签
 exports.deleteTag = async (req, res, next) => {
     try {
-        const tag = await Tag.findById(req.params.id);
+        const tagId = req.params.id;
+        const articlesUsingTag = await Article.countDocuments({ tags: tagId });
 
-        if (!tag) {
-            return res.status(404).json({ error: '标签不存在' });
+        if (articlesUsingTag > 0) {
+            return res.status(400).json({ message: '该标签正在被其他文章引用，无法删除' });
         }
 
-        await tag.remove();
+        const tag = await Tag.findByIdAndDelete(tagId);
+        if (!tag) {
+            return res.status(404).json({ message: '标签未找到' });
+        }
 
-        res.json({ message: '标签已删除' });
-    } catch (err) {
-        next(err);
+        res.status(200).json({ message: '标签删除成功' });
+    } catch (error) {
+        console.error('删除标签失败:', error);
+        res.status(500).json({ message: '服务器错误' });
     }
 };

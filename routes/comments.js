@@ -1,9 +1,8 @@
-// routes/comments.js
-
 const express = require('express');
 const router = express.Router();
 const commentController = require('../controllers/commentController');
 const authMiddleware = require('../middlewares/authMiddleware');
+const adminMiddleware = require('../middlewares/adminMiddleware'); // 引入 adminMiddleware
 const { body, param, query } = require('express-validator');
 
 // 获取评论列表
@@ -20,8 +19,8 @@ router.post('/', authMiddleware, [
     body('parentId').optional().isMongoId().withMessage('无效的父评论ID'),
 ], commentController.addComment);
 
-// 删除评论（需要认证，只有博主可以删除）
-router.delete('/:id', authMiddleware, [
+// 删除评论（需要认证和管理员权限）
+router.delete('/:id', authMiddleware, adminMiddleware, [
     param('id').isMongoId().withMessage('无效的评论ID'),
 ], commentController.deleteComment);
 

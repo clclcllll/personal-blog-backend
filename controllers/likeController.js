@@ -51,6 +51,9 @@ exports.unlikeArticle = async (req, res, next) => {
         const userId = req.user ? req.user.id : null;
         const ipAddress = req.ip;
 
+        console.log("取消点赞 - 用户ID:", userId);
+        console.log("取消点赞 - IP地址:", ipAddress);
+
         // 查找点赞记录
         const like = await Like.findOne({
             article: articleId,
@@ -61,6 +64,7 @@ exports.unlikeArticle = async (req, res, next) => {
         });
 
         if (!like) {
+            console.warn("未找到点赞记录");
             return res.status(400).json({ error: '您尚未点赞该文章' });
         }
 
@@ -78,3 +82,4 @@ exports.unlikeArticle = async (req, res, next) => {
         next(err);
     }
 };
+
