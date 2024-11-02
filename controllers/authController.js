@@ -89,6 +89,39 @@ exports.getUserProfile = async (req, res, next) => {
     }
 };
 
+// 获取用户列表（仅管理员）
+exports.getUsers = async (req, res) => {
+    try {
+        const { page = 1, limit = 10, keyword } = req.query;
+        const query = {};
+
+        if (keyword) {
+            query.$or = [
+                { username: { $regex: keyword, $options: 'i' } },
+                { email: { $regex: keyword, $options: 'i' } },
+            ];
+        }
+
+        const total = await User.countDocuments(query);
+        const pages = Math.ceil(total / limit);
+        const users = await User.find(query)
+            .select('-password') // 不返回密码字段
+            .sort({ createdAt: -1 })
+            .skip((page - 1) * limit)
+            .limit(parseInt(limit));
+
+        res.json({
+            users,
+            total,
+            page: parseInt(page),
+            pages,
+        });
+    } catch (error) {
+        console.error('获取用户列表失败:', error);
+        res.status(500).json({ error: '服务器错误' });
+    }
+};
+
 // 用户注销（可选，前端清除令牌即可）
 exports.logout = (req, res) => {
     res.json({ message: '已注销' });

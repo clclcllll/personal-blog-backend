@@ -18,9 +18,8 @@ userSchema.pre('save', async function (next) {
     next();
 });
 
-// 密码验证方法
-userSchema.methods.comparePassword = function (password) {
-    return bcrypt.compare(password, this.password);
+// 定义 comparePassword 方法，用于比较明文密码和哈希密码
+userSchema.methods.comparePassword = async function (enteredPassword) {
+    return await bcrypt.compare(enteredPassword, this.password);
 };
-
 module.exports = mongoose.model('User', userSchema);
