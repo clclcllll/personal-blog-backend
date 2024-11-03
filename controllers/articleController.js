@@ -5,6 +5,7 @@ const Article = require('../models/Article');
 const User = require('../models/User');
 const Category = require('../models/Category');
 const Tag = require('../models/Tag');
+const Like = require('../models/Like'); // 引入 Like 模型
 const fs = require('fs');
 const path = require('path');
 const markdownIt = require('markdown-it');
@@ -53,15 +54,33 @@ exports.getArticleById = async (req, res, next) => {
             .populate('category', 'name')
             .populate('tags', 'name');
 
+
         if (!article) {
             return res.status(404).json({ error: '文章不存在' });
+        }
+        //打印article
+        console.log(article);
+
+        // 判断当前用户是否已经点赞
+        let liked = false;
+        const userId = req.user ? req.user.id : null;
+        const ipAddress = req.ip;
+
+        if (userId) {
+            // 用户已登录，按 userId 查找
+            const existingLike = await Like.findOne({ article: article._id, user: userId });
+            if (existingLike) liked = true;
+        } else {
+            // 用户未登录，按 ipAddress 查找
+            const existingLike = await Like.findOne({ article: article._id, ipAddress: ipAddress });
+            if (existingLike) liked = true;
         }
 
         // 增加阅读次数
         article.views += 1;
         await article.save();
 
-        res.json({ article });
+        res.json({ article , liked});
     } catch (err) {
         next(err);
     }
