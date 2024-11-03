@@ -14,6 +14,22 @@ exports.getTags = async (req, res, next) => {
     }
 };
 
+// 获取单个标签详情
+exports.getTagById = async (req, res, next) => {
+    try {
+        const tag = await Tag.findById(req.params.id);
+        if (!tag) {
+            return res.status(404).json({ error: '标签未找到' });
+
+        }
+        res.json({ tag });
+    }
+    catch (err) {
+        next(err);
+    }
+
+};
+
 // 创建标签
 exports.createTag = async (req, res, next) => {
     try {

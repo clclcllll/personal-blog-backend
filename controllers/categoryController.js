@@ -13,6 +13,23 @@ exports.getCategories = async (req, res, next) => {
     }
 };
 
+// 获取分类详情
+exports.getCategoryById = async (req, res, next) => {
+    try {
+        const category = await Category.findById(req.params.id);
+
+        if (!category) {
+            return res.status(404).json({ error: '分类不存在' });
+        }
+        //后台打印
+        console.log(category);
+
+        res.json({ category });
+    } catch (err) {
+        next(err);
+    }
+};
+
 // 创建分类
 exports.createCategory = async (req, res, next) => {
     try {

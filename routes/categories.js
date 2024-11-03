@@ -8,6 +8,12 @@ const { body, param } = require('express-validator');
 // 获取分类列表
 router.get('/', categoryController.getCategories);
 
+// 获取分类详情
+router.get('/:id', [
+    param('id').isMongoId().withMessage('无效的分类ID'),
+], categoryController.getCategoryById);
+
+
 // 创建分类（需要认证和管理员权限）
 router.post('/', authMiddleware, adminMiddleware, [
     body('name').notEmpty().withMessage('分类名称不能为空').trim().escape(),

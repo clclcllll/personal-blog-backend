@@ -144,15 +144,17 @@ exports.deleteArticle = async (req, res, next) => {
             return res.status(404).json({ error: '文章不存在' });
         }
 
-        // 检查用户是否有权限删除文章（可选，根据需要）
+        // 检查用户是否有权限删除文章
         if (article.author.toString() !== req.user.id && req.user.role !== 'admin') {
             return res.status(403).json({ error: '无权删除此文章' });
         }
 
-        await article.remove();
+        // 使用 findByIdAndDelete 来删除文档
+        await Article.findByIdAndDelete(req.params.id);
 
         res.json({ message: '文章已删除' });
     } catch (err) {
+        console.error('Error deleting article:', err); // 输出详细的错误信息
         next(err);
     }
 };
