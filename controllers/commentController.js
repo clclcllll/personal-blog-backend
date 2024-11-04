@@ -18,24 +18,24 @@ exports.getComments = async (req, res, next) => {
             .limit(parseInt(limit));
 
 
-        // 为每个顶级评论平铺所有嵌套的二级及后续评论
+        // 为每个顶级评论递归构建平铺的评论结构
         const commentsWithFlattenedReplies = await Promise.all(
             topComments.map(async (comment) => {
-                const flattenedReplies = await getFlattenedReplies(comment._id);
+                const flattenedReplies = await buildFlattenedCommentTree(comment._id);
                 return {
                     ...comment.toObject(),
-                    replies: flattenedReplies, // 将所有嵌套评论平铺在二级评论的同一层级
+                    replies: flattenedReplies,
                 };
             })
         );
 
-        // // 在这里打印出生成的评论列表数据
-        // console.log(JSON.stringify({
-        //     comments: commentsWithFlattenedReplies,
-        //     total,
-        //     page: parseInt(page),
-        //     pages: Math.ceil(total / limit),
-        // }, null, 2));  // 使用JSON.stringify并设置缩进格式方便阅读
+        // 在这里打印出生成的评论列表数据
+        console.log(JSON.stringify({
+            comments: commentsWithFlattenedReplies,
+            total,
+            page: parseInt(page),
+            pages: Math.ceil(total / limit),
+        }, null, 2));  // 使用JSON.stringify并设置缩进格式方便阅读
 
         res.json({
             comments: commentsWithFlattenedReplies,
@@ -50,47 +50,32 @@ exports.getComments = async (req, res, next) => {
 };
 
 
-// 获取平铺的回复（从二级评论开始，将后续所有层级平铺到二级评论层级下）
-async function getFlattenedReplies(commentId) {
+// 递归构建平铺评论树的辅助函数，将所有嵌套评论平铺到顶级评论的 replies 数组
+async function buildFlattenedCommentTree(commentId, parentUsername = null) {
     const replies = await Comment.find({ parent: commentId })
         .populate('user', 'username')
         .sort({ createdAt: -1 });
 
     let flattenedReplies = [];
 
-    // 遍历每个二级评论，递归获取所有嵌套评论，并标注 replyToUsername
     for (const reply of replies) {
         const replyObject = reply.toObject();
-        replyObject.replies = []; // 清空嵌套评论，防止继续递归
+        replyObject.replies = []; // 清空嵌套评论的 `replies`
 
-        // 获取当前评论的嵌套评论并设置 replyToUsername
-        const nestedReplies = await getNestedReplies(reply._id, reply.user.username);
-        flattenedReplies.push({
-            ...replyObject,
-            replies: [], // 清空嵌套层级的 `replies`
-        });
+        // 设置 `replyToUsername` 为传入的父用户名
+        replyObject.replyToUsername = parentUsername;
 
-        // 将嵌套的评论直接追加到平铺数组中
+        // 递归获取所有子级评论
+        const nestedReplies = await buildFlattenedCommentTree(reply._id,reply.user.username);
+
+        // 将当前回复以及其所有嵌套回复平铺到顶层结构中
+        flattenedReplies.push(replyObject);
+
+        // 将递归生成的子评论加入到平铺结构中
         flattenedReplies = flattenedReplies.concat(nestedReplies);
     }
 
     return flattenedReplies;
-}
-
-// 递归获取三级及以上评论，将三级及更深层级的评论平铺并设置 replyToUsername
-async function getNestedReplies(commentId, parentUsername) {
-    const replies = await Comment.find({ parent: commentId })
-        .populate('user', 'username')
-        .sort({ createdAt: -1 });
-
-    // 将三级及更深层级的评论标记 replyToUsername，并平铺为二级评论的同级
-    const flattenedNestedReplies = replies.map(reply => ({
-        ...reply.toObject(),
-        replyToUsername: parentUsername,
-        replies: [], // 清空嵌套层级的 `replies`
-    }));
-
-    return flattenedNestedReplies;
 }
 
 
@@ -144,6 +129,8 @@ exports.addComment = async (req, res, next) => {
 
         // 填充用户信息
         await comment.populate('user', 'username');
+
+        console.log(JSON.stringify(comment, null, 2));  // 使用JSON.stringify并设置缩进格式方便阅读
 
 
         res.status(201).json({ message: '评论添加成功', comment, replyToUsername });
