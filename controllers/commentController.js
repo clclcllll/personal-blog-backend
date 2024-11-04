@@ -9,16 +9,27 @@ exports.getComments = async (req, res, next) => {
     try {
         const { articleId, page = 1, limit = 10 } = req.query;
 
-        const total = await Comment.countDocuments({ article: articleId });
-        const comments = await Comment.find({ article: articleId })
+        const total = await Comment.countDocuments({ article: articleId, parent: null });
+        const comments = await Comment.find({ article: articleId, parent: null })
             .populate('user', 'username')
-            .populate('parent')
             .sort({ createdAt: -1 })
             .skip((page - 1) * limit)
             .limit(parseInt(limit));
 
+
+        // 为每个父级评论添加子级评论
+        const commentsWithReplies = await Promise.all(comments.map(async (comment) => {
+            const replies = await Comment.find({ parent: comment._id })
+                .populate('user', 'username')
+                .sort({ createdAt: -1 });
+            return {
+                ...comment.toObject(),
+                replies,
+            };
+        }));
+
         res.json({
-            comments,
+            comments: commentsWithReplies,
             total,
             page: parseInt(page),
             pages: Math.ceil(total / limit),
@@ -45,6 +56,18 @@ exports.addComment = async (req, res, next) => {
         const article = await Article.findById(articleId);
         if (!article) {
             return res.status(404).json({ error: '文章不存在' });
+        }
+
+        // 如果有 parentId，检查其层级
+        let parentComment = null;
+        if (parentId) {
+            parentComment = await Comment.findById(parentId);
+            if (!parentComment) {
+                return res.status(404).json({ error: '父评论不存在' });
+            }
+            if (parentComment.parent) {
+                return res.status(400).json({ error: '无法回复子级评论，只能回复父级评论' });
+            }
         }
 
         const comment = new Comment({
