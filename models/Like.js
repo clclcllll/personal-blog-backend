@@ -7,7 +7,7 @@ const likeSchema =new mongoose.Schema({
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     ipAddress: { type: String },
     createdAt: { type: Date, default: Date.now }
-});
+},{ timestamps: true });
 
 // 添加唯一索引，防止重复点赞
 likeSchema.index({ article: 1, user: 1 }, { unique: true, partialFilterExpression: { user: { $type: 'objectId' } } });

@@ -16,7 +16,13 @@ router.get('/', [
 router.post('/', authMiddleware, [
     body('articleId').isMongoId().withMessage('无效的文章ID'),
     body('content').notEmpty().withMessage('评论内容不能为空'),
-    body('parentId').optional().isMongoId().withMessage('无效的父评论ID'),
+    body('parentId')
+        .optional({ nullable: true })
+        .custom((value) => {
+            if (value === null) return true;
+            return /^[0-9a-fA-F]{24}$/.test(value);
+        })
+        .withMessage('无效的父评论ID'),
 ], commentController.addComment);
 
 // 删除评论（需要认证和管理员权限）

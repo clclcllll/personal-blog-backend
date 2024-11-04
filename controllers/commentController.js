@@ -32,9 +32,11 @@ exports.getComments = async (req, res, next) => {
 exports.addComment = async (req, res, next) => {
     try {
         // 检查验证结果
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
+        const errors = validationResult(req);// 获取验证结果
+        //打印验证结果
+        console.log(errors);
+        if (!errors.isEmpty()) { // 如果验证结果不为空
+            return res.status(400).json({ errors: errors.array() });// 返回错误信息
         }
 
         const { articleId, content, parentId } = req.body;
