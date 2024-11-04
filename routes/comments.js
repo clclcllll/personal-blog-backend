@@ -25,6 +25,10 @@ router.post('/', authMiddleware, [
         .withMessage('无效的父评论ID'),
 ], commentController.addComment);
 
+// 获取所有文章的所有评论（仅管理员可访问）
+router.get('/admin/all', authMiddleware, adminMiddleware, commentController.getAllComments);
+
+
 // 删除评论（需要认证和管理员权限）
 router.delete('/:id', authMiddleware, adminMiddleware, [
     param('id').isMongoId().withMessage('无效的评论ID'),
