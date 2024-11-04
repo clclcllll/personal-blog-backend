@@ -6,6 +6,7 @@ const User = require('../models/User');
 const Category = require('../models/Category');
 const Tag = require('../models/Tag');
 const Like = require('../models/Like'); // 引入 Like 模型
+const Comment = require('../models/Comment');
 const fs = require('fs');
 const path = require('path');
 const markdownIt = require('markdown-it');
@@ -166,11 +167,16 @@ exports.deleteArticle = async (req, res, next) => {
         if (article.author.toString() !== req.user.id && req.user.role !== 'admin') {
             return res.status(403).json({ error: '无权删除此文章' });
         }
+        // 删除与该文章相关的点赞记录
+        await Like.deleteMany({ article: req.params.id });
 
-        // 使用 findByIdAndDelete 来删除文档
+        // 删除与该文章相关的评论记录
+        await Comment.deleteMany({ article: req.params.id });
+
+        // 使用 findByIdAndDelete 来删除文章文档
         await Article.findByIdAndDelete(req.params.id);
 
-        res.json({ message: '文章已删除' });
+        res.json({ message: '文章及相关数据已删除' });
     } catch (err) {
         console.error('Error deleting article:', err); // 输出详细的错误信息
         next(err);
