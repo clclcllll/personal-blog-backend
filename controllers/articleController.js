@@ -58,8 +58,6 @@ exports.getArticleById = async (req, res, next) => {
         if (!article) {
             return res.status(404).json({ error: '文章不存在' });
         }
-        //打印article
-        console.log(article);
 
         // 判断当前用户是否已经点赞
         let liked = false;

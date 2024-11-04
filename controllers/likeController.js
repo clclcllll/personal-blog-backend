@@ -10,6 +10,9 @@ exports.likeArticle = async (req, res, next) => {
         const userId = req.user ? req.user.id : null;
         const ipAddress = req.ip;
 
+        console.log("点赞 - 用户ID:", userId);
+        console.log("点赞 - IP地址:", ipAddress);
+
         // 构建查询条件
         let query;
         if (userId) {
