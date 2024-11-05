@@ -66,15 +66,22 @@ exports.getArticleById = async (req, res, next) => {
         const userId = req.user ? req.user.id : null;
         const ipAddress = req.ip;
 
+        console.log("点赞 - 用户ID:", userId);
+        console.log("点赞 - IP地址:", ipAddress);
+
+
         if (userId) {
             // 用户已登录，按 userId 查找
             const existingLike = await Like.findOne({ article: article._id, user: userId });
             if (existingLike) liked = true;
+            else liked = false;
         } else {
             // 用户未登录，按 ipAddress 查找
             const existingLike = await Like.findOne({ article: article._id, ipAddress: ipAddress });
             if (existingLike) liked = true;
+            else liked = false;
         }
+
 
         // 增加阅读次数
         article.views += 1;

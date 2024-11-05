@@ -30,12 +30,12 @@ exports.getComments = async (req, res, next) => {
         );
 
         // 在这里打印出生成的评论列表数据
-        console.log(JSON.stringify({
-            comments: commentsWithFlattenedReplies,
-            total,
-            page: parseInt(page),
-            pages: Math.ceil(total / limit),
-        }, null, 2));  // 使用JSON.stringify并设置缩进格式方便阅读
+        // console.log(JSON.stringify({
+        //     comments: commentsWithFlattenedReplies,
+        //     total,
+        //     page: parseInt(page),
+        //     pages: Math.ceil(total / limit),
+        // }, null, 2));  // 使用JSON.stringify并设置缩进格式方便阅读
 
         res.json({
             comments: commentsWithFlattenedReplies,

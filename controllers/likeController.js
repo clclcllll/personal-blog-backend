@@ -10,17 +10,24 @@ exports.likeArticle = async (req, res, next) => {
         const userId = req.user ? req.user.id : null;
         const ipAddress = req.ip;
 
-        console.log("点赞 - 用户ID:", userId);
-        console.log("点赞 - IP地址:", ipAddress);
+        // console.log("点赞 - 用户ID:", userId);
+        // console.log("点赞 - IP地址:", ipAddress);
+        // console.log("文章 ID:", articleId);
+
 
         // 构建查询条件
         let query;
+        let likeData;
+
         if (userId) {
-            // 用户已登录，按 userId 查找
+            // 用户已登录，按 userId 查找并存储
             query = { article: articleId, user: userId };
+            likeData = { article: articleId, user: userId };
+            console.log("11111111111111111");
         } else {
-            // 用户未登录，按 ipAddress 查找
+            // 用户未登录，按 ipAddress 查找并存储
             query = { article: articleId, ipAddress: ipAddress };
+            likeData = { article: articleId, ipAddress: ipAddress };
         }
 
         // 检查是否已点赞
@@ -30,12 +37,8 @@ exports.likeArticle = async (req, res, next) => {
             return res.status(400).json({ error: '您已点赞过该文章' });
         }
 
-        const like = new Like({
-            article: articleId,
-            user: userId,
-            ipAddress: userId ? null : ipAddress,
-        });
-
+        // 创建点赞记录
+        const like = new Like(likeData);
         await like.save();
 
         // 更新文章的点赞数量

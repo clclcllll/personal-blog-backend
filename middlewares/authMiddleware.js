@@ -22,6 +22,7 @@ const authMiddleware = (req, res, next) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         // 将解码后的用户信息附加到请求对象上
         req.user = decoded;
+        console.log('req.user:', req.user);
         next();
     } catch (error) {
         return res.status(401).json({ error: '无效的令牌（Invalid token）' });

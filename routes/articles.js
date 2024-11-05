@@ -1,25 +1,35 @@
+// routes/articles.js
 const express = require('express');
 const router = express.Router();
 const articleController = require('../controllers/articleController');
 const authMiddleware = require('../middlewares/authMiddleware');
-const adminMiddleware = require('../middlewares/adminMiddleware'); // 引入 adminMiddleware
+const optionalAuthMiddleware = require('../middlewares/optionalAuthMiddleware'); // 引入 optionalAuthMiddleware
+const adminMiddleware = require('../middlewares/adminMiddleware');
 const { body, param, query } = require('express-validator');
 const multer = require('multer');
 const upload = multer({ dest: 'uploads/' });
 
-// 获取文章列表
-router.get('/', [
-    query('page').optional().isInt({ min: 1 }).toInt(),
-    query('limit').optional().isInt({ min: 1 }).toInt(),
-    query('category').optional().isMongoId(),
-    query('tag').optional().isMongoId(),
-    query('keyword').optional().trim().escape(),
-], articleController.getArticles);
+// 获取文章列表，允许访客和用户访问
+router.get('/',
+    optionalAuthMiddleware, // 可选认证
+    [
+        query('page').optional().isInt({ min: 1 }).toInt(),
+        query('limit').optional().isInt({ min: 1 }).toInt(),
+        query('category').optional().isMongoId(),
+        query('tag').optional().isMongoId(),
+        query('keyword').optional().trim().escape(),
+    ],
+    articleController.getArticles
+);
 
-// 获取文章详情
-router.get('/:id', [
-    param('id').isMongoId().withMessage('无效的文章ID'),
-], articleController.getArticleById);
+// 获取文章详情，允许访客和用户访问
+router.get('/:id',
+    optionalAuthMiddleware, // 可选认证
+    [
+        param('id').isMongoId().withMessage('无效的文章ID'),
+    ],
+    articleController.getArticleById
+);
 
 // 创建文章（需要认证和管理员权限）
 router.post('/', authMiddleware, adminMiddleware, [
