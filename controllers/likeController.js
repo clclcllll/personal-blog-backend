@@ -23,7 +23,6 @@ exports.likeArticle = async (req, res, next) => {
             // 用户已登录，按 userId 查找并存储
             query = { article: articleId, user: userId };
             likeData = { article: articleId, user: userId };
-            console.log("11111111111111111");
         } else {
             // 用户未登录，按 ipAddress 查找并存储
             query = { article: articleId, ipAddress: ipAddress };
@@ -61,8 +60,8 @@ exports.unlikeArticle = async (req, res, next) => {
         const userId = req.user ? req.user.id : null;
         const ipAddress = req.ip;
 
-        console.log("取消点赞 - 用户ID:", userId);
-        console.log("取消点赞 - IP地址:", ipAddress);
+        // console.log("取消点赞 - 用户ID:", userId);
+        // console.log("取消点赞 - IP地址:", ipAddress);
 
         // 查找点赞记录
         let query;
