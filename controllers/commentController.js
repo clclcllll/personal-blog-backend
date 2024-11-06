@@ -11,17 +11,20 @@ exports.getComments = async (req, res, next) => {
 
         // 获取顶级评论
         const total = await Comment.countDocuments({ article: articleId, parent: null });
+
         const topComments = await Comment.find({ article: articleId, parent: null })
             .populate('user', 'username')
             .sort({ createdAt: -1 })
             .skip((page - 1) * limit)
             .limit(parseInt(limit));
 
+        let totalCommentsCount = 0;
 
         // 为每个顶级评论递归构建平铺的评论结构
         const commentsWithFlattenedReplies = await Promise.all(
             topComments.map(async (comment) => {
-                const flattenedReplies = await buildFlattenedCommentTree(comment._id);
+                const { flattenedReplies, count } = await buildFlattenedCommentTree(comment._id);
+                totalCommentsCount += count + 1; // 包含顶级评论本身
                 return {
                     ...comment.toObject(),
                     replies: flattenedReplies,
@@ -39,7 +42,7 @@ exports.getComments = async (req, res, next) => {
 
         res.json({
             comments: commentsWithFlattenedReplies,
-            total,
+            total: totalCommentsCount,
             page: parseInt(page),
             pages: Math.ceil(total / limit),
         });
@@ -57,6 +60,7 @@ async function buildFlattenedCommentTree(commentId, parentUsername = null) {
         .sort({ createdAt: -1 });
 
     let flattenedReplies = [];
+    let totalCount = 0; // 用于计算子评论数量
 
     for (const reply of replies) {
         const replyObject = reply.toObject();
@@ -66,7 +70,8 @@ async function buildFlattenedCommentTree(commentId, parentUsername = null) {
         replyObject.replyToUsername = parentUsername;
 
         // 递归获取所有子级评论
-        const nestedReplies = await buildFlattenedCommentTree(reply._id,reply.user.username);
+        const { flattenedReplies: nestedReplies, count } = await buildFlattenedCommentTree(reply._id, reply.user.username);
+        totalCount += count + 1; // 包含当前回复本身
 
         // 将当前回复以及其所有嵌套回复平铺到顶层结构中
         flattenedReplies.push(replyObject);
@@ -75,7 +80,7 @@ async function buildFlattenedCommentTree(commentId, parentUsername = null) {
         flattenedReplies = flattenedReplies.concat(nestedReplies);
     }
 
-    return flattenedReplies;
+    return{ flattenedReplies, count: totalCount };
 }
 
 
