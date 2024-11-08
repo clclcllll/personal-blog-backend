@@ -15,11 +15,20 @@ const md = new markdownIt();
 // 获取文章列表
 exports.getArticles = async (req, res, next) => {
     try {
-        const { page = 1, limit = 10, category, tag, keyword } = req.query;
+        const { page = 1, limit = 10, category, tags, keyword } = req.query;
 
+        // 初始化过滤条件
         const filter = {};
-        if (category) filter.category = category;
-        if (tag) filter.tags = tag;
+        if (category) {
+            filter.category = category;
+        }
+
+        // 支持多标签查询
+        if (tags) {
+            const tagArray = Array.isArray(tags) ? tags : [tags];
+            filter.tags = { $all: tagArray };  // 使用 $all 确保包含所有标签
+        }
+
         if (keyword) {
             filter.$or = [
                 { title: new RegExp(keyword, 'i') },
@@ -27,6 +36,7 @@ exports.getArticles = async (req, res, next) => {
             ];
         }
 
+        // 获取文章总数和分页数据
         const total = await Article.countDocuments(filter);
         const articles = await Article.find(filter)
             .populate('author', 'username')
@@ -46,6 +56,9 @@ exports.getArticles = async (req, res, next) => {
         next(err);
     }
 };
+
+
+
 
 // 获取文章详情
 exports.getArticleById = async (req, res, next) => {
