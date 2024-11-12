@@ -7,12 +7,36 @@ const Article = require('../models/Article'); // 添加这行代码
 // 获取标签列表
 exports.getTags = async (req, res, next) => {
     try {
-        const tags = await Tag.find().sort({ createdAt: -1 });
+        const tags = await Tag.aggregate([
+            {
+                $lookup: {
+                    from: "articles", // 关联的文章集合名称
+                    localField: "_id", // Tag 集合中的字段
+                    foreignField: "tags", // Article 集合中的标签字段（假设文章中标签是数组）
+                    as: "articles" // 输出的文章列表
+                }
+            },
+            {
+                $addFields: {
+                    count: { $size: "$articles" } // 计算每个标签包含的文章数量
+                }
+            },
+            {
+                $project: {
+                    articles: 0 // 不返回文章列表，只返回标签和文章数量
+                }
+            },
+            {
+                $sort: { createdAt: -1 } // 按创建时间降序排列
+            }
+        ]);
+
         res.json({ tags });
     } catch (err) {
         next(err);
     }
 };
+
 
 // 获取单个标签详情
 exports.getTagById = async (req, res, next) => {

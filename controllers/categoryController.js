@@ -6,12 +6,36 @@ const Category = require('../models/Category');
 // 获取分类列表
 exports.getCategories = async (req, res, next) => {
     try {
-        const categories = await Category.find().sort({ createdAt: -1 });
+        const categories = await Category.aggregate([
+            {
+                $lookup: {
+                    from: "articles", // 关联的文章集合名
+                    localField: "_id", // Category 集合中的字段
+                    foreignField: "category", // Article 集合中的分类字段
+                    as: "articles", // 输出的文章列表
+                }
+            },
+            {
+                $addFields: {
+                    count: { $size: "$articles" } // 计算每个分类包含的文章数量
+                }
+            },
+            {
+                $project: {
+                    articles: 0 // 不返回文章列表，只返回分类和文章数量
+                }
+            },
+            {
+                $sort: { createdAt: -1 } // 按创建时间降序排列
+            }
+        ]);
+
         res.json({ categories });
     } catch (err) {
         next(err);
     }
 };
+
 
 // 获取分类详情
 exports.getCategoryById = async (req, res, next) => {
@@ -85,16 +109,15 @@ exports.updateCategory = async (req, res, next) => {
 // 删除分类
 exports.deleteCategory = async (req, res, next) => {
     try {
-        const category = await Category.findById(req.params.id);
+        const category = await Category.findByIdAndDelete(req.params.id);
 
         if (!category) {
             return res.status(404).json({ error: '分类不存在' });
         }
 
-        await category.remove();
-
         res.json({ message: '分类已删除' });
     } catch (err) {
+        console.error('删除分类时出错:', err); // 打印错误信息以帮助调试
         next(err);
     }
 };
